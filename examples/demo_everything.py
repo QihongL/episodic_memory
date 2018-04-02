@@ -1,3 +1,5 @@
+import sys
+sys.path.append('..')
 from episodic_memory.world import *
 from episodic_memory.utils import *
 from episodic_memory.agent import *
@@ -10,7 +12,7 @@ sns.set_style('darkgrid')
 sns.set(font_scale=1.2)
 
 """ navie world """
-naive_param_vecs = get_naive_param_vec_set()
+naive_param_vecs = [[(i+1) for i in range(10)], [(i+11) for i in range(10)]]
 # constants
 param_vec_dim = len(naive_param_vecs[0])
 max_realization_idx = 1
@@ -32,8 +34,8 @@ w1 = World(param_vec_dim, num_ongoing_vecs, max_realization_idx,
            [naive_param_vecs[1]])
 w1.initialize_situations(num_events)
 # print info
-# w0.print_info()
-# w1.print_info()
+w0
+w1
 # make events
 obs_seq0, pred_seq0 = w0.make_event_seq(event_length)
 obs_seq1, pred_seq1 = w1.make_event_seq(event_length)
@@ -44,7 +46,7 @@ print(obs_seq2)
 
 # agent
 agent = Agent(min_matches, max_mismatch, buffer_size)
-agent.print_info()
+agent
 agent.episodic_memory.get_candidate_episodes(agent.buffer.od)
 
 
