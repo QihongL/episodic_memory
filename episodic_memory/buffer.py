@@ -1,4 +1,3 @@
-from episodic_memory.utils import flatten_lists
 from collections import OrderedDict
 
 
@@ -24,14 +23,8 @@ class Buffer():
         Parameters
         ----------
         params_vals: list
-            a list of parameter vales. e.g: ['a1', 'b2']
+            a list of parameter vales. e.g: [[2,1], [3,2]]
         """
-        # input checking
-        if type(params_vals) is str:
-            params_vals = [params_vals]
-        else:
-            # flatten the list just in case
-            params_vals = flatten_lists(params_vals)
         # loop over all param values
         for param_val in params_vals:
             self.__load_val(param_val)
@@ -41,7 +34,7 @@ class Buffer():
         Parameters
         ----------
         params_val: string
-            a parameter vales. e.g: 'a1'
+            a parameter vales. e.g: [2,1]
         """
         param, val = param_val[0], param_val[1]
         # if need to add a new value and it will cause overflow
@@ -54,9 +47,7 @@ class Buffer():
     def get_all_vals(self):
         """ Get all parameter values in the buffer as a list
         """
-        param_vals = ['%s%s' % (param, value)
-                      for param, value in self.od.items()]
-        return param_vals
+        return [[param, value] for param, value in self.od.items()]
 
     def get_all_params(self):
         """ Get all parameters in the buffer
@@ -69,7 +60,7 @@ class Buffer():
         Parameters
         ----------
         params_val: string
-            a parameter vales. e.g: 'a1'
+            a parameter vales. e.g: [1, 0]
 
         Returns
         -------
@@ -79,9 +70,9 @@ class Buffer():
             return True
         return False
 
-    def print_info(self):
-        print('Param value Buffer:')
-        print('- Size = %d' % (self.size))
+    def __repr__(self):
+        info = 'Param value Buffer:\n'
+        info += '- Size = %d\n' % (self.size)
         # get the content
         if len(self.od) > 0:
             content_str = '{'
@@ -90,11 +81,31 @@ class Buffer():
             content_str = content_str[:-2] + '}'
         else:
             content_str = '{}'
-        print('- Content: ', content_str)
+        info += '- Content: %s' % (content_str)
+        return info
 
 
-""" testing
-"""
+# """ testing
+# """
+# event = [[6, 2],
+#          [2, 1],
+#          [1, 1],
+#          [7, 2],
+#          [3, 1],
+#          [0, 1],
+#          [5, 1],
+#          [4, 1],
+#          [6, 2],
+#          [2, 1],
+#          [1, 1],
+#          [7, 2],
+#          [3, 1],
+#          [0, 1],
+#          [5, 1],
+#          [4, 1]]
+#
 # b = Buffer(3)
-# b.load_vals(['a1', 'b2'])
-# b.print_info()
+# b.load_vals(event)
+# b.get_all_vals()
+# b.get_all_params()
+# b.has_param([1, 1])

@@ -1,5 +1,3 @@
-# from utils import *
-# from string import ascii_uppercase, ascii_lowercase
 import numpy as np
 
 
@@ -19,101 +17,116 @@ class EpisodicMemory():
 
     def add_episode(self, value_vector):
         # take a snapshot of the input value vector (e.g. buffer)
-        self.episodes.append(value_vector)
-
-    def organize(self):
-        # e.g. consolidate the whole event at event boundary
-        # remove subsets
-        self.episodes = remove_subsets(self.episodes)
+        if not value_vector in self.episodes:
+            self.episodes.append(value_vector)
 
     def get_candidate_episodes(self, buffer_od, verbose=False):
         """ get all episodes that are consistent with the input cue
             the cue is a vector of parameter values
         """
-
-        def num_matches(episode, buffer_od):
-            """ Compute the number of matches of an input episode w.r.t
-                exisiting values (belief)
-            """
-            # get all parameter values in the buffer
-            param_vals = ['%s%s' % (param, value)
-                          for param, value in buffer_od.items()]
-            # compute the cardinality of their interesection
-            n_match = len(set(param_vals).intersection(episode))
-            return n_match
-
-        def num_mismatches(episode, buffer_od):
-            """ Compute the number values in the episode but not in the buffer
-            """
-            n_mismatch = 0
-            # for all parameter value in the episode
-            for param_val in episode:
-                # # if the underlying parameter is in the buffer
-                if param_val[0] in buffer_od:
-                    # AND has a different value ...
-                    if buffer_od[param_val[0]] != param_val[1]:
-                        # increment the mismatch count
-                        n_mismatch += 1
-                else:
-                    n_mismatch += 1
-            return n_mismatch
-
-        # # get all episodes ...
-        # candidates = self.episodes
-        # # satisfy minimal consistency criterion
-        # candidates = [episode for episode in self.episodes
-        #               if num_matches(episode, buffer_od) > self.min_matches]
-        # candidates = [episode for episode in self.episodes
-        #               if num_mismatches(episode, buffer_od) < self.max_mismatch]
-
+        # preallocate measures for all episodes
         num_episodes = len(self.episodes)
         consistency = np.zeros((num_episodes,))
         mismatches = np.zeros((num_episodes,))
         # calculate the consistency and mismatch for all episodes
         for i in range(num_episodes):
             episode = self.episodes[i]
-            consistency[i] = num_matches(episode, buffer_od)
-            mismatches[i] = num_mismatches(episode, buffer_od)
+            consistency[i] = self._num_matches(episode, buffer_od)
+            mismatches[i] = self._num_mismatches(episode, buffer_od)
             print('-- episode: %s has cons %d and mis %d' % (
                 episode, consistency[i], mismatches[i]))
         candidates = [self.episodes[i] for i in range(num_episodes)
                       if (consistency[i] >= self.min_matches
-                          and mismatches <= self.max_mismatch)]
+                          and mismatches[i] <= self.max_mismatch)]
+        # "best" episodic maximize {consistency - mismatches}
+        best_episode = candidates[np.argmax(consistency - mismatches)]
+        return candidates, best_episode
 
-        return candidates
+    def _num_matches(self, episode, buffer_od):
+        """ Compute the number of matches of an input episode w.r.t
+            exisiting values (belief)
+        """
+        param_vals = [[param, val] for param, val in list(buffer_od.items())]
+        n_matches = intersection_ll(episode, param_vals)
+        return n_matches
 
-    def print_info(self):
-        print('Episodic Memory:')
-        print('- Min_matches = %d' % (self.min_matches))
-        print('- Max_mismatches = %d' % (self.max_mismatch))
-        print('- Param vectors:')
-        print(self.episodes)
+    def _num_mismatches(self, episode, buffer_od):
+        """ Compute the number values in the episode differ from the buffer
+        """
+        n_mismatch = 0
+        for param, val in episode:
+            if param in buffer_od and buffer_od[param] != val:
+                n_mismatch += 1
+        return n_mismatch
+
+    # def _num_missing(self, episode, buffer_od):
+    #     """ Compute the number values in the episode missing from the buffer
+    #     """
+    #     n_missing = 0
+    #     for param, val in episode:
+    #         if not param in buffer_od:
+    #             n_missing += 1
+    #     return n_missing
+
+    def __repr__(self):
+        info = 'Episodic Memory:\n'
+        info += '- Min_matches = %d\n' % (self.min_matches)
+        info += '- Max_mismatches = %d\n' % (self.max_mismatch)
+        info += '- Param vectors:\n%s' % (self.episodes)
+        return info
 
 
 """ helper functions
 """
 
 
-def remove_subsets(list_of_list):
-    # remove all subsets
-    sets = {frozenset(e) for e in list_of_list}
-    reduced_set = set()
-    while sets:
-        e = sets.pop()
-        if any(e.issubset(s) for s in sets) \
-                or any(e.issubset(s) for s in reduced_set):
-            continue
-        else:
-            reduced_set.add(e)
-    # conver to a list
-    reduced_set_list = [list(item) for item in list(reduced_set)]
-    return reduced_set_list
+def intersection_ll(ll1, ll2):
+    """ compute the intersection between two list of lists
+    """
+    assert type(ll1) == list
+    assert type(ll2) == list
+    counts = 0
+    for list_i in ll1:
+        if list_i in ll2:
+            counts += 1
+    return counts
 
 
-""" test
-"""
-
+# """ testing
+# """
+# event = [[6, 2],
+#          [2, 1],
+#          [1, 1],
+#          [7, 2],
+#          [3, 1],
+#          [0, 1],
+#          [5, 1],
+#          [4, 1],
+#          [6, 2],
+#          [2, 1],
+#          [1, 1],
+#          [7, 2],
+#          [3, 1],
+#          [0, 1],
+#          [5, 1],
+#          [4, 1]]
+# from episodic_memory.buffer import Buffer
+# b = Buffer(3)
+# b.load_vals(event)
+# b
+#
+# episode1 = [
+#     [3, 1],
+#     [0, 1],
+#     [5, 1]
+# ]
+# episode2 = [
+#     [1, 1],
+#     [7, 2],
+#     [3, 1]
+# ]
 # em = EpisodicMemory(min_matches=2, max_mismatch=2)
-# em.add_episode(['a1', 'b1', 'c2'])
-# em.organize()
-# em.print_info()
+# em.empty_episodes()
+# em.add_episode(episode1)
+# em.add_episode(episode2)
+# em.get_candidate_episodes(b.od)

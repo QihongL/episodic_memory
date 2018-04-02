@@ -1,7 +1,5 @@
-import numpy as np
 from episodic_memory.memory import EpisodicMemory
 from episodic_memory.buffer import Buffer
-from copy import deepcopy
 
 
 class Agent:
@@ -29,22 +27,20 @@ class Agent:
         """ take observation and perform the corresponding updates
         """
         # TODO retrieve if uncertain
-        # TODO should retrieve the best episode
 
         # update the buffer with the current observation
         self.buffer.load_vals(observation)
         log = '- Load observation: %s\n- Buffer: %s' % (
             observation, self.buffer.get_all_vals())
         # get all episode that satisfy all constraints
-        candidates = self.episodic_memory.get_candidate_episodes(
+        candidates, best_episode = self.episodic_memory.get_candidate_episodes(
             self.buffer.od, verbose)
-
         # retrieve the 1st episode
         num_episodes_retrieved = 0
         if len(candidates) > 0:
-            self.buffer.load_vals(candidates[0])
+            self.buffer.load_vals(best_episode)
             num_episodes_retrieved += 1
-            log += '\n- Load episode: %s' % (candidates[0])
+            log += '\n- Load episode: %s' % (best_episode)
         if verbose:
             print(log)
         return num_episodes_retrieved
@@ -53,12 +49,12 @@ class Agent:
         """ an event := a sequence of observations
         """
         event_length = len(event)
-        num_episodes_retrieved = np.zeros((event_length,))
+        num_episodes_retrieved = [None] * event_length
         for i in range(event_length):
             if verbose:
                 print('Event: %d' % (i))
             num_episodes_retrieved[i] = self.process_observation(
-                event[i], verbose)
+                [event[i]], verbose)
         return num_episodes_retrieved
 
     def form_episode(self):
@@ -67,8 +63,7 @@ class Agent:
         current_belief = self.buffer.get_all_vals()
         self.episodic_memory.add_episode(current_belief)
 
-    def print_info(self):
-        print('--- Agent2 INFO ---')
-        self.buffer.print_info()
-        self.episodic_memory.print_info()
-        print()
+    def __repr__(self):
+        info = '--- Agent INFO ---\n'
+        info += '%s\n%s\n' % (self.buffer, self.episodic_memory)
+        return info
