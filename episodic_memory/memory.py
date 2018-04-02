@@ -39,7 +39,9 @@ class EpisodicMemory():
                       if (consistency[i] >= self.min_matches
                           and mismatches[i] <= self.max_mismatch)]
         # "best" episodic maximize {consistency - mismatches}
-        best_episode = candidates[np.argmax(consistency - mismatches)]
+        best_episode = None
+        if len(candidates) > 0:
+            best_episode = candidates[np.argmax(consistency - mismatches)]
         return candidates, best_episode
 
     def _num_matches(self, episode, buffer_od):

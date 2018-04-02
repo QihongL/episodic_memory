@@ -37,7 +37,7 @@ class Agent:
             self.buffer.od, verbose)
         # retrieve the 1st episode
         num_episodes_retrieved = 0
-        if len(candidates) > 0:
+        if best_episode != None:
             self.buffer.load_vals(best_episode)
             num_episodes_retrieved += 1
             log += '\n- Load episode: %s' % (best_episode)
